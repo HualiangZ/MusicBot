@@ -1,8 +1,12 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Interactivity;
+using DSharpPlus.Interactivity.Extensions;
+using MusicBot.Commands;
 using MusicBot.Config;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -29,7 +33,25 @@ namespace MusicBot
 
             client = new DiscordClient(discordConfig);
 
+            client.UseInteractivity(new InteractivityConfiguration()
+            {
+                Timeout = TimeSpan.FromMinutes(2)
+            });
+ 
             client.Ready += Client_Ready;
+
+            var commandsConfig = new CommandsNextConfiguration()
+            {
+                StringPrefixes = new string[] {jsonReader.prefix},
+                EnableMentionPrefix = true,
+                EnableDms = true,
+                EnableDefaultHelp = false
+            };
+
+            commands = client.UseCommandsNext(commandsConfig);
+
+            commands.RegisterCommands<TestCommands>();
+
             await client.ConnectAsync();
             await Task.Delay(-1);
         }
