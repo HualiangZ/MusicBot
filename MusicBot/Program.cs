@@ -15,7 +15,7 @@ namespace MusicBot
 {
     internal class Program
     {
-        private static DiscordClient client { get; set; }
+        public static DiscordClient client { get; set; }
         private static CommandsNextExtension commands {  get; set; }
 
         static async Task Main(string[] args)
@@ -35,7 +35,7 @@ namespace MusicBot
 
             client.UseInteractivity(new InteractivityConfiguration()
             {
-                Timeout = TimeSpan.FromMinutes(2)
+                Timeout = TimeSpan.FromMinutes(1)
             });
  
             client.Ready += Client_Ready;
