@@ -2,6 +2,7 @@
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.SlashCommands;
 using MusicBot.Commands;
 using MusicBot.Config;
 using System;
@@ -52,6 +53,8 @@ namespace MusicBot
 
             commands = client.UseCommandsNext(commandsConfig);
             commands.RegisterCommands<TestCommands>();
+
+            var slashCommandConfig = client.GetSlashCommands();
 
             await client.ConnectAsync();
             await Task.Delay(-1);
