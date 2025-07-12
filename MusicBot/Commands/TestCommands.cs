@@ -3,6 +3,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web;
 
@@ -10,6 +11,8 @@ namespace MusicBot.Commands
 {
     internal class TestCommands : BaseCommandModule
     {
+
+
         [Command("test")]
         public async Task TestCommand(CommandContext context)
         {

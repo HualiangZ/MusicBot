@@ -39,6 +39,8 @@ namespace MusicBot
             });
  
             client.Ready += Client_Ready;
+            client.MessageCreated += MessageCreated;
+            client.VoiceStateUpdated += VoiceStateUpdated;
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -49,11 +51,26 @@ namespace MusicBot
             };
 
             commands = client.UseCommandsNext(commandsConfig);
-
             commands.RegisterCommands<TestCommands>();
 
             await client.ConnectAsync();
             await Task.Delay(-1);
+        }
+
+        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
+        {
+            if(args.Before == null && args.Channel.Name == "General")
+            {
+                await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
+            }
+        }
+
+        private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
+        {
+            if(args.Author.IsBot == false)
+            {
+                await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
+            }
         }
 
         private static Task Client_Ready(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
