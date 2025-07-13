@@ -4,6 +4,7 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using MusicBot.Commands;
+using MusicBot.Commands.SlashCommands;
 using MusicBot.Config;
 using System;
 using System.Collections.Generic;
@@ -40,8 +41,8 @@ namespace MusicBot
             });
  
             client.Ready += Client_Ready;
-            client.MessageCreated += MessageCreated;
-            client.VoiceStateUpdated += VoiceStateUpdated;
+/*            client.MessageCreated += MessageCreated;
+            client.VoiceStateUpdated += VoiceStateUpdated;*/
 
             var commandsConfig = new CommandsNextConfiguration()
             {
@@ -53,14 +54,16 @@ namespace MusicBot
 
             commands = client.UseCommandsNext(commandsConfig);
             commands.RegisterCommands<TestCommands>();
+            
+            var slashCommandConfig = client.UseSlashCommands();
+            slashCommandConfig.RegisterCommands<SlashCommandTest>();
 
-            var slashCommandConfig = client.GetSlashCommands();
 
             await client.ConnectAsync();
             await Task.Delay(-1);
         }
 
-        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
+/*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
         {
             if(args.Before == null && args.Channel.Name == "General")
             {
@@ -74,7 +77,7 @@ namespace MusicBot
             {
                 await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
             }
-        }
+        }*/
 
         private static Task Client_Ready(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
         {
