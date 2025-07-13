@@ -57,6 +57,7 @@ namespace MusicBot
             
             var slashCommandConfig = client.UseSlashCommands();
             slashCommandConfig.RegisterCommands<SlashCommandTest>();
+            slashCommandConfig.RegisterCommands<SlashCommandGroups>();
 
 
             await client.ConnectAsync();
