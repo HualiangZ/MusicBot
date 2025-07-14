@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using DSharpPlus.SlashCommands;
 using System;
 using System.Collections.Generic;
@@ -27,8 +28,8 @@ namespace MusicBot.Commands.SlashCommands
         [SlashCommand("button", "button test")]
         public async Task ButtonTest(InteractionContext context)
         {
-            var button1 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button1", "Button 1");
-            var button2 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button2", "Button 2");
+            var button1 = new DiscordButtonComponent(ButtonStyle.Secondary, "button1", "Button 1");
+            var button2 = new DiscordButtonComponent(ButtonStyle.Secondary, "button2", "Button 2");
 
             var embed2 = new DiscordEmbedBuilder
             {
