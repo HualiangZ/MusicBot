@@ -77,6 +77,7 @@ namespace MusicBot
                         Title = "Selected",
                         Description = "Button 1 selected"
                     };
+                    
                     await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed));
                     break;
 
@@ -89,6 +90,7 @@ namespace MusicBot
                     };
                     await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed2));
                     break;
+              
             }
         }
 

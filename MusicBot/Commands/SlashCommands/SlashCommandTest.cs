@@ -30,13 +30,14 @@ namespace MusicBot.Commands.SlashCommands
             var button1 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button1", "Button 1");
             var button2 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button2", "Button 2");
 
-            await context.DeferAsync();
-            var embed = new DiscordEmbedBuilder()
+            var embed2 = new DiscordEmbedBuilder
             {
                 Color = DiscordColor.Green,
-                Title = "Button Test",
-                Description = "Selcect a Button"
+                Title = "This is a test",
+                Description = "Select a Button",
             };
+
+            await context.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed2).AddComponents(button1, button2));
         }
 
     }
