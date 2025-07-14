@@ -1,5 +1,6 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -33,7 +34,7 @@ namespace MusicBot
                 AutoReconnect = true,
             };
 
-            client = new DiscordClient(discordConfig);
+            client = new DiscordClient(discordConfig);         
 
             client.UseInteractivity(new InteractivityConfiguration()
             {
@@ -41,6 +42,7 @@ namespace MusicBot
             });
  
             client.Ready += Client_Ready;
+            client.ComponentInteractionCreated += ComponentInteractionCreated;
 /*            client.MessageCreated += MessageCreated;
             client.VoiceStateUpdated += VoiceStateUpdated;*/
 
@@ -64,21 +66,47 @@ namespace MusicBot
             await Task.Delay(-1);
         }
 
-/*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
+        private static async Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs args)
         {
-            if(args.Before == null && args.Channel.Name == "General")
+            switch (args.Interaction.Data.CustomId) 
             {
-                await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
+                case "button1":
+                    var embed = new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Green,
+                        Title = "Selected",
+                        Description = "Button 1 selected"
+                    };
+                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed));
+                    break;
+
+                case "button2":
+                    var embed2 = new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Green,
+                        Title = "Selected",
+                        Description = "Button 2 selected"
+                    };
+                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed2));
+                    break;
             }
         }
 
-        private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
-        {
-            if(args.Author.IsBot == false)
-            {
-                await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
-            }
-        }*/
+        /*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
+                {
+                    if (args.Before == null && args.Channel.Name == "General")
+                    {
+                        await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
+                    }
+                }
+
+                private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
+                {
+                    if (args.Author.IsBot == false)
+                    {
+                        await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
+                    }
+                }*/
 
         private static Task Client_Ready(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
         {

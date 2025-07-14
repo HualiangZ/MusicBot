@@ -23,5 +23,21 @@ namespace MusicBot.Commands.SlashCommands
             await context.EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embed));
         
         }
+
+        [SlashCommand("button", "button test")]
+        public async Task ButtonTest(InteractionContext context)
+        {
+            var button1 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button1", "Button 1");
+            var button2 = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "button2", "Button 2");
+
+            await context.DeferAsync();
+            var embed = new DiscordEmbedBuilder()
+            {
+                Color = DiscordColor.Green,
+                Title = "Button Test",
+                Description = "Selcect a Button"
+            };
+        }
+
     }
 }
