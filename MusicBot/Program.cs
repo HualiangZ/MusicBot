@@ -5,7 +5,6 @@ using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.Net;
-using DSharpPlus.Lavalink;
 using MusicBot.Commands;
 using MusicBot.Commands.SlashCommands;
 using MusicBot.Config;
@@ -63,23 +62,10 @@ namespace MusicBot
             slashCommandConfig.RegisterCommands<SlashCommandTest>();
             slashCommandConfig.RegisterCommands<SlashCommandGroups>();
 
-            var endpoint = new ConnectionEndpoint
-            {
-                Hostname = "127.0.0.1",
-                Port = 2333,
-            };
-
-            var lavalinkConfig = new LavalinkConfiguration
-            {
-                Password = "youshallnotpass",
-                RestEndpoint = endpoint,
-                SocketEndpoint = endpoint,
-            };
-
-            var lavalink = client.UseLavalink();
+            
 
             await client.ConnectAsync();
-            await lavalink.ConnectAsync(lavalinkConfig);
+
             await Task.Delay(-1);
         }
 
