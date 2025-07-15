@@ -4,6 +4,8 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
+using DSharpPlus.Net;
+using DSharpPlus.Lavalink;
 using MusicBot.Commands;
 using MusicBot.Commands.SlashCommands;
 using MusicBot.Config;
@@ -61,8 +63,23 @@ namespace MusicBot
             slashCommandConfig.RegisterCommands<SlashCommandTest>();
             slashCommandConfig.RegisterCommands<SlashCommandGroups>();
 
+            var endpoint = new ConnectionEndpoint
+            {
+                Hostname = "127.0.0.1",
+                Port = 2333,
+            };
+
+            var lavalinkConfig = new LavalinkConfiguration
+            {
+                Password = "youshallnotpass",
+                RestEndpoint = endpoint,
+                SocketEndpoint = endpoint,
+            };
+
+            var lavalink = client.UseLavalink();
 
             await client.ConnectAsync();
+            await lavalink.ConnectAsync(lavalinkConfig);
             await Task.Delay(-1);
         }
 
@@ -94,25 +111,25 @@ namespace MusicBot
             }
         }
 
-        /*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
-                {
-                    if (args.Before == null && args.Channel.Name == "General")
-                    {
-                        await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
-                    }
-                }
-
-                private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
-                {
-                    if (args.Author.IsBot == false)
-                    {
-                        await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
-                    }
-                }*/
-
         private static Task Client_Ready(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
         {
             return Task.CompletedTask;
         }
+
+        /*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
+        {
+            if (args.Before == null && args.Channel.Name == "General")
+            {
+                await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
+            }
+        }
+
+        private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
+        {
+            if (args.Author.IsBot == false)
+            {
+                await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
+            }
+        }*/
     }
 }
