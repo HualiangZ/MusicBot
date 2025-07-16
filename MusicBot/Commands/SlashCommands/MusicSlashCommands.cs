@@ -67,6 +67,31 @@ namespace MusicBot.Commands.SlashCommands
 
         }
 
+        [SlashCommand("skip", "skip track")]
+        public async Task Skip(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: false);
+            if (player is null) { return; }
+
+            if (player.CurrentTrack is null)
+            {
+                await context.CreateResponseAsync("Nothing is Playing").ConfigureAwait(false);
+                return;
+            }
+
+            await player.SkipAsync().ConfigureAwait(false);
+
+            var track = player.CurrentTrack;
+
+            if (track is null)
+            {
+                await context.CreateResponseAsync($"Song skipped. Now playing {track.Uri}").ConfigureAwait(false);
+            }
+            else
+            {
+                await context.CreateResponseAsync($"Song skipped. Playlist is empty").ConfigureAwait(false);
+            }
+        }
 
         private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext contex, bool connectToVoiceChannel = true)
         {
