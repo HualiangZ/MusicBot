@@ -83,7 +83,7 @@ namespace MusicBot.Commands.SlashCommands
 
             var track = player.CurrentTrack;
 
-            if (track is null)
+            if (track is not null)
             {
                 await context.CreateResponseAsync($"Song skipped. Now playing {track.Uri}").ConfigureAwait(false);
             }
