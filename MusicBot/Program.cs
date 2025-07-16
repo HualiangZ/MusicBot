@@ -1,10 +1,15 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
+using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
-using DSharpPlus.SlashCommands;
 using DSharpPlus.Net;
+using DSharpPlus.SlashCommands;
+using Lavalink4NET.Extensions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using MusicBot.Commands;
 using MusicBot.Commands.SlashCommands;
 using MusicBot.Config;
@@ -12,110 +17,62 @@ using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
-namespace MusicBot
-{
-    internal class Program
+var jsonReader = new JsonReader();
+await jsonReader.ReadJson();
+
+var builder = new HostApplicationBuilder(args);
+builder.Services.AddHostedService<ApplicationHost>();
+builder.Services.AddSingleton<DiscordClient>();
+builder.Services.AddSingleton(new DiscordConfiguration { Token = jsonReader.token });
+builder.Services.AddLavalink();
+
+builder.Services.AddLogging(s => s.AddConsole().SetMinimumLevel(LogLevel.Trace));
+builder.Build().Run();
+file sealed class ApplicationHost : BackgroundService 
+{ 
+    private readonly IServiceProvider provider;
+    private readonly DiscordClient client;
+
+    public ApplicationHost(IServiceProvider serviceProvider, DiscordClient discordClient)
     {
-        public static DiscordClient client { get; set; }
-        private static CommandsNextExtension commands {  get; set; }
+        ArgumentNullException.ThrowIfNull(serviceProvider);
+        ArgumentNullException.ThrowIfNull(discordClient);
 
-        static async Task Main(string[] args)
+        this.provider = serviceProvider;
+        this.client = discordClient;
+    }
+
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        client
+            .UseSlashCommands(new SlashCommandsConfiguration { Services = provider });
+            //.RegisterCommands<MusicCommands>(0); // Add guild id here
+
+
+        await client
+            .ConnectAsync()
+            .ConfigureAwait(false);
+
+        var readyTaskCompletionSource = new TaskCompletionSource();
+
+        Task SetResult(DiscordClient client, ReadyEventArgs eventArgs)
         {
-            var jsonReader = new JsonReader();
-            await jsonReader.ReadJson();
-
-            var discordConfig = new DiscordConfiguration()
-            {
-                Intents = DiscordIntents.All,
-                Token = jsonReader.token,
-                TokenType = TokenType.Bot,
-                AutoReconnect = true,
-            };
-
-            client = new DiscordClient(discordConfig);         
-
-            client.UseInteractivity(new InteractivityConfiguration()
-            {
-                Timeout = TimeSpan.FromMinutes(1)
-            });
- 
-            client.Ready += Client_Ready;
-            client.ComponentInteractionCreated += ComponentInteractionCreated;
-/*            client.MessageCreated += MessageCreated;
-            client.VoiceStateUpdated += VoiceStateUpdated;*/
-
-            var commandsConfig = new CommandsNextConfiguration()
-            {
-                StringPrefixes = new string[] {jsonReader.prefix},
-                EnableMentionPrefix = true,
-                EnableDms = true,
-                EnableDefaultHelp = false
-            };
-
-            commands = client.UseCommandsNext(commandsConfig);
-            commands.RegisterCommands<TestCommands>();
-            
-            var slashCommandConfig = client.UseSlashCommands();
-            slashCommandConfig.RegisterCommands<SlashCommandTest>();
-            slashCommandConfig.RegisterCommands<SlashCommandGroups>();
-
-            
-
-            await client.ConnectAsync();
-
-            await Task.Delay(-1);
-        }
-
-        private static async Task ComponentInteractionCreated(DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs args)
-        {
-            switch (args.Interaction.Data.CustomId) 
-            {
-                case "button1":
-                    var embed = new DiscordEmbedBuilder
-                    {
-                        Color = DiscordColor.Green,
-                        Title = "Selected",
-                        Description = "Button 1 selected"
-                    };
-                    
-                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed));
-                    break;
-
-                case "button2":
-                    var embed2 = new DiscordEmbedBuilder
-                    {
-                        Color = DiscordColor.Green,
-                        Title = "Selected",
-                        Description = "Button 2 selected"
-                    };
-                    await args.Interaction.CreateResponseAsync(InteractionResponseType.UpdateMessage, new DiscordInteractionResponseBuilder().AddEmbed(embed2));
-                    break;
-              
-            }
-        }
-
-        private static Task Client_Ready(DiscordClient sender, DSharpPlus.EventArgs.ReadyEventArgs args)
-        {
+            readyTaskCompletionSource.TrySetResult();
             return Task.CompletedTask;
         }
 
-        /*        private static async Task VoiceStateUpdated(DiscordClient sender, DSharpPlus.EventArgs.VoiceStateUpdateEventArgs args)
-        {
-            if (args.Before == null && args.Channel.Name == "General")
-            {
-                await args.Channel.SendMessageAsync($"{args.User.Username} has joined voice");
-            }
-        }
+        client.Ready += SetResult;
+        await readyTaskCompletionSource.Task.ConfigureAwait(false);
+        client.Ready -= SetResult;
 
-        private static async Task MessageCreated(DiscordClient sender, DSharpPlus.EventArgs.MessageCreateEventArgs args)
-        {
-            if (args.Author.IsBot == false)
-            {
-                await args.Channel.SendMessageAsync($"message was created by {args.Author.Username}");
-            }
-        }*/
+        await Task
+            .Delay(Timeout.InfiniteTimeSpan, stoppingToken)
+            .ConfigureAwait(false);
     }
 }
+

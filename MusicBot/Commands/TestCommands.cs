@@ -1,4 +1,4 @@
-﻿using DSharpPlus.CommandsNext;
+﻿/*using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
@@ -105,3 +105,4 @@ namespace MusicBot.Commands
         } 
     }
 }
+*/
