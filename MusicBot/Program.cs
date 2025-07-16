@@ -50,9 +50,8 @@ file sealed class ApplicationHost : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         client
-            .UseSlashCommands(new SlashCommandsConfiguration { Services = provider });
-            //.RegisterCommands<MusicCommands>(0); // Add guild id here
-
+            .UseSlashCommands(new SlashCommandsConfiguration { Services = provider })
+            .RegisterCommands<MusicSlashCommands>(0);
 
         await client
             .ConnectAsync()

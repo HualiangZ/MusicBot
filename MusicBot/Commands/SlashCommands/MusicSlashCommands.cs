@@ -1,0 +1,62 @@
+﻿using System;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Threading;
+using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using DSharpPlus.SlashCommands;
+using Lavalink4NET;
+using Lavalink4NET.Players;
+using Lavalink4NET.Players.Queued;
+using Lavalink4NET.Rest.Entities.Tracks;
+using Microsoft.Extensions.Options;
+namespace MusicBot.Commands.SlashCommands
+{
+    internal class MusicSlashCommands : ApplicationCommandModule
+    {
+        private readonly IAudioService _audioService;
+
+        public MusicSlashCommands(IAudioService audioService) 
+        {
+            this._audioService = audioService;
+        }
+
+       
+
+        private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext contex, bool connectToVoiceChannel = true)
+        {
+            var retrieveOptions = new PlayerRetrieveOptions(
+                ChannelBehavior: connectToVoiceChannel ? PlayerChannelBehavior.Join : PlayerChannelBehavior.None);
+
+            var playerOptions = new QueuedLavalinkPlayerOptions { HistoryCapacity = 10000 };
+
+            var result = await _audioService.Players
+                .RetrieveAsync(
+                    contex.Guild.Id, 
+                    contex.Member?.VoiceState.Channel.Id, 
+                    playerFactory: PlayerFactory.Queued, 
+                    Options.Create(playerOptions), 
+                    retrieveOptions)
+                .ConfigureAwait(false);
+
+            if (!result.IsSuccess)
+            {
+                var errMessage = result.Status switch
+                {
+                    PlayerRetrieveStatus.UserNotInVoiceChannel => "You are not in a voice channel",
+                    PlayerRetrieveStatus.BotNotConnected => "The bot is not connected",
+                    _ => "Unknown error.",
+                };
+
+                var errResponse = new DiscordFollowupMessageBuilder()
+                    .WithContent(errMessage)
+                    .AsEphemeral();
+
+                await contex.FollowUpAsync(errResponse).ConfigureAwait(false);
+
+            }
+            return result.Player;
+        } 
+
+    }
+}
