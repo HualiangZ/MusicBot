@@ -13,7 +13,7 @@ namespace MusicBot.Config
     {
         public string token { get; set; }
         public string prefix { get; set; }
-        public string guildId { get; set; }
+        public ulong guildId { get; set; }
 
         public async Task ReadJson()
         {
@@ -33,6 +33,6 @@ namespace MusicBot.Config
     {
         public string token { get; set; }
         public string prefix { get; set; }
-        public string guildId { get; set; }
+        public ulong guildId { get; set; }
     } 
 }

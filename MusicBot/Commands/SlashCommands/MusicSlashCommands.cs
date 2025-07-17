@@ -29,7 +29,6 @@ namespace MusicBot.Commands.SlashCommands
         {
             var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
-
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
 
             if (player is null)

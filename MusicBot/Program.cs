@@ -54,8 +54,7 @@ public class ApplicationHost : BackgroundService
         await jsonReader.ReadJson();
         client
             .UseSlashCommands(new SlashCommandsConfiguration { Services = provider })
-            .RegisterCommands<MusicSlashCommands>(865973536299417630);
-
+            .RegisterCommands<MusicSlashCommands>(jsonReader.guildId);
         client.UseInteractivity(new InteractivityConfiguration()
         {
             Timeout = TimeSpan.FromMinutes(5),
