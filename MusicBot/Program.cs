@@ -94,6 +94,7 @@ public class ApplicationHost : BackgroundService
                     InteractionResponseType.ChannelMessageWithSource, 
                     new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
                     .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
                 break;
         }
     }

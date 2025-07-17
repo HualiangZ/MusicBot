@@ -1,8 +1,4 @@
-﻿using System;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
-using System.Threading;
-using System.Threading.Tasks;
+﻿using DSharpPlus;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
@@ -11,6 +7,11 @@ using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Microsoft.Extensions.Options;
+using System;
+using System.Diagnostics;
+using System.Diagnostics.Metrics;
+using System.Threading;
+using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
 {
     internal class MusicSlashCommands : ApplicationCommandModule
@@ -56,27 +57,26 @@ namespace MusicBot.Commands.SlashCommands
 
             var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
 
-            var embedMusic = new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Green,
-                Title = "Now Playing",
-                ImageUrl = track.ArtworkUri.ToString(),
-                Description = $"{track.Title} \n",
-            };
-
-
             if (position is 0)
             {
+                var embedMusic = new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Green,
+                    Title = "Now Playing",
+                    ImageUrl = track.ArtworkUri.ToString(),
+                    Description = $"{track.Title} \n",
+                };
                 var response = await context
-                    .EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
+                    .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
                     .ConfigureAwait(false);
 
                 var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
                 if(interactWithSkipButton.Result is not null)
-                {
+                {                   
                     await this.Skip(context).ConfigureAwait(false);
+                    await context.DeleteFollowupAsync(response.Id).ConfigureAwait(false);
                 }
-                
+
             }
             else
             {
@@ -103,7 +103,7 @@ namespace MusicBot.Commands.SlashCommands
 
             var track = player.CurrentTrack;
 
-            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "skipBtn", "Skip");
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
 
             if (track is not null)
             {
@@ -114,15 +114,17 @@ namespace MusicBot.Commands.SlashCommands
                     ImageUrl = track.ArtworkUri.ToString(),
                     Description = $"{track.Title} \n",
                 };
-
+             
                 var response = await context
                .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
                .ConfigureAwait(false);
 
                 var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+
                 if (interactWithSkipButton.Result is not null)
                 {
                     await this.Skip(context).ConfigureAwait(false);
+                    await context.DeleteFollowupAsync(response.Id).ConfigureAwait(false);
                 }
             }
             else
