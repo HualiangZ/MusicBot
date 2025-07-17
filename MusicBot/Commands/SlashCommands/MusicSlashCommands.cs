@@ -6,6 +6,7 @@ using Lavalink4NET;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
 using Lavalink4NET.Rest.Entities.Tracks;
+using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
 using System;
 using System.Diagnostics;
@@ -37,7 +38,7 @@ namespace MusicBot.Commands.SlashCommands
             }
 
             var track = await _audioService.Tracks
-                .LoadTrackAsync(song, TrackSearchMode.YouTube)
+                .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
                 .ConfigureAwait(false);
 
             if (track is null)
@@ -55,27 +56,9 @@ namespace MusicBot.Commands.SlashCommands
 
             var position = await player.PlayAsync(track).ConfigureAwait(false);
 
-            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-
             if (position is 0)
             {
-                var embedMusic = new DiscordEmbedBuilder
-                {
-                    Color = DiscordColor.Green,
-                    Title = "Now Playing",
-                    ImageUrl = track.ArtworkUri.ToString(),
-                    Description = $"{track.Title} \n",
-                };
-                var response = await context
-                    .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
-                    .ConfigureAwait(false);
-
-                var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
-                if(interactWithSkipButton.Result is not null)
-                {                   
-                    await this.Skip(context).ConfigureAwait(false);
-                    await context.DeleteFollowupAsync(response.Id).ConfigureAwait(false);
-                }
+                await ResponseMessage(context, track).ConfigureAwait(false);
 
             }
             else
@@ -103,29 +86,9 @@ namespace MusicBot.Commands.SlashCommands
 
             var track = player.CurrentTrack;
 
-            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-
             if (track is not null)
             {
-                var embedMusic = new DiscordEmbedBuilder
-                {
-                    Color = DiscordColor.Green,
-                    Title = "Now Playing",
-                    ImageUrl = track.ArtworkUri.ToString(),
-                    Description = $"{track.Title} \n",
-                };
-             
-                var response = await context
-               .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
-               .ConfigureAwait(false);
-
-                var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
-
-                if (interactWithSkipButton.Result is not null)
-                {
-                    await this.Skip(context).ConfigureAwait(false);
-                    await context.DeleteFollowupAsync(response.Id).ConfigureAwait(false);
-                }
+                await ResponseMessage(context, track).ConfigureAwait(false);
             }
             else
             {
@@ -133,7 +96,30 @@ namespace MusicBot.Commands.SlashCommands
             }
         }
 
+        private async Task ResponseMessage(InteractionContext context, LavalinkTrack track)
+        {
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+            var embedMusic = new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Green,
+                Title = "Now Playing",
+                ImageUrl = track.ArtworkUri.ToString(),
+                Description = $"{track.Title} by: {track.Author}\n",
+            };
 
+            var response = await context
+           .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
+           .ConfigureAwait(false);
+
+            var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+
+            if (interactWithSkipButton.Result is not null)
+            {               
+                await this.Skip(context).ConfigureAwait(false);
+                await context.Channel.DeleteMessageAsync(response).ConfigureAwait(false);
+
+            }
+        }
         private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext contex, bool connectToVoiceChannel = true)
         {
             var retrieveOptions = new PlayerRetrieveOptions(
