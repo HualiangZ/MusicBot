@@ -31,7 +31,7 @@ builder.Services.AddSingleton<DiscordClient>();
 builder.Services.AddSingleton(new DiscordConfiguration { Token = jsonReader.token });
 builder.Services.AddLavalink();
 
-builder.Services.AddLogging(s => s.AddConsole().SetMinimumLevel(LogLevel.Trace));
+//builder.Services.AddLogging(s => s.AddConsole().SetMinimumLevel(LogLevel.Trace));
 builder.Build().Run();
 
 public class ApplicationHost : BackgroundService 
@@ -54,15 +54,13 @@ public class ApplicationHost : BackgroundService
         await jsonReader.ReadJson();
         client
             .UseSlashCommands(new SlashCommandsConfiguration { Services = provider })
-            .RegisterCommands<MusicSlashCommands>(865973536299417630);
-
+            .RegisterCommands<MusicSlashCommands>(jsonReader.guildId);
         client.UseInteractivity(new InteractivityConfiguration()
         {
             Timeout = TimeSpan.FromMinutes(5),
         });
 
         client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
-
         await client
             .ConnectAsync()
             .ConfigureAwait(false);
@@ -82,6 +80,7 @@ public class ApplicationHost : BackgroundService
         await Task
             .Delay(Timeout.InfiniteTimeSpan, stoppingToken)
             .ConfigureAwait(false);
+
     }
 
     private async Task Client_ComponentInteractionCreated(DiscordClient sender, ComponentInteractionCreateEventArgs args)
@@ -94,6 +93,7 @@ public class ApplicationHost : BackgroundService
                     InteractionResponseType.ChannelMessageWithSource, 
                     new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
                     .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
                 break;
         }
     }
