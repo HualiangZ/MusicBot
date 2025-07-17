@@ -4,6 +4,7 @@ using System.Diagnostics.Metrics;
 using System.Threading;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
+using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Lavalink4NET;
 using Lavalink4NET.Players;
@@ -52,10 +53,22 @@ namespace MusicBot.Commands.SlashCommands
 
             var position = await player.PlayAsync(track).ConfigureAwait(false);
 
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+
+            var interact = ApplicationHost.client.GetInteractivity();
+
+            var embedMusic = new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Green,
+                Title = "Now Playing",
+                Description = $"{track.SourceName} {track.ArtworkUri} \n",
+            };
+
+
             if (position is 0)
             {
                 await context
-                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Playing: {track.Uri}"))
+                    .EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embedMusic))
                     .ConfigureAwait(false);
             }
             else
@@ -92,6 +105,7 @@ namespace MusicBot.Commands.SlashCommands
                 await context.CreateResponseAsync($"Song skipped. Playlist is empty").ConfigureAwait(false);
             }
         }
+
 
         private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext contex, bool connectToVoiceChannel = true)
         {

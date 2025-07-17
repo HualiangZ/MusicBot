@@ -33,10 +33,11 @@ builder.Services.AddLavalink();
 
 builder.Services.AddLogging(s => s.AddConsole().SetMinimumLevel(LogLevel.Trace));
 builder.Build().Run();
-file sealed class ApplicationHost : BackgroundService 
+
+public class ApplicationHost : BackgroundService 
 { 
     private readonly IServiceProvider provider;
-    private readonly DiscordClient client;
+    public static DiscordClient client;
 
     public ApplicationHost(IServiceProvider serviceProvider, DiscordClient discordClient)
     {
@@ -44,14 +45,21 @@ file sealed class ApplicationHost : BackgroundService
         ArgumentNullException.ThrowIfNull(discordClient);
 
         this.provider = serviceProvider;
-        this.client = discordClient;
+        client = discordClient;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        var jsonReader = new JsonReader();
+        await jsonReader.ReadJson();
         client
             .UseSlashCommands(new SlashCommandsConfiguration { Services = provider })
-            .RegisterCommands<MusicSlashCommands>(0);
+            .RegisterCommands<MusicSlashCommands>(865973536299417630);
+
+        client.UseInteractivity(new InteractivityConfiguration()
+        {
+            Timeout = TimeSpan.FromMinutes(5),
+        });
 
         await client
             .ConnectAsync()
@@ -73,5 +81,7 @@ file sealed class ApplicationHost : BackgroundService
             .Delay(Timeout.InfiniteTimeSpan, stoppingToken)
             .ConfigureAwait(false);
     }
+
+
 }
 
