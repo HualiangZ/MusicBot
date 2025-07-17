@@ -16,7 +16,7 @@ namespace MusicBot.Commands.SlashCommands
     internal class MusicSlashCommands : ApplicationCommandModule
     {
         private readonly IAudioService _audioService;
-
+        public static DiscordMessage discordMessage { get;  set; }
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
@@ -25,6 +25,7 @@ namespace MusicBot.Commands.SlashCommands
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
         {
+            var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
 
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
@@ -55,26 +56,32 @@ namespace MusicBot.Commands.SlashCommands
 
             var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
 
-            var interact = ApplicationHost.client.GetInteractivity();
-
             var embedMusic = new DiscordEmbedBuilder
             {
                 Color = DiscordColor.Green,
                 Title = "Now Playing",
-                Description = $"{track.SourceName} {track.ArtworkUri} \n",
+                ImageUrl = track.ArtworkUri.ToString(),
+                Description = $"{track.Title} \n",
             };
 
 
             if (position is 0)
             {
-                await context
-                    .EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embedMusic))
+                var response = await context
+                    .EditResponseAsync(new DiscordWebhookBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
                     .ConfigureAwait(false);
+
+                var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+                if(interactWithSkipButton.Result is not null)
+                {
+                    await this.Skip(context).ConfigureAwait(false);
+                }
+                
             }
             else
             {
                 await context
-                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Uri}"))
+                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}"))
                     .ConfigureAwait(false);
             }
 
@@ -96,13 +103,31 @@ namespace MusicBot.Commands.SlashCommands
 
             var track = player.CurrentTrack;
 
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "skipBtn", "Skip");
+
             if (track is not null)
             {
-                await context.CreateResponseAsync($"Song skipped. Now playing {track.Uri}").ConfigureAwait(false);
+                var embedMusic = new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Green,
+                    Title = "Now Playing",
+                    ImageUrl = track.ArtworkUri.ToString(),
+                    Description = $"{track.Title} \n",
+                };
+
+                var response = await context
+               .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
+               .ConfigureAwait(false);
+
+                var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+                if (interactWithSkipButton.Result is not null)
+                {
+                    await this.Skip(context).ConfigureAwait(false);
+                }
             }
             else
             {
-                await context.CreateResponseAsync($"Song skipped. Playlist is empty").ConfigureAwait(false);
+                await context.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Playlist is empty")).ConfigureAwait(false);
             }
         }
 

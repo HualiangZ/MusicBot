@@ -61,6 +61,8 @@ public class ApplicationHost : BackgroundService
             Timeout = TimeSpan.FromMinutes(5),
         });
 
+        client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
+
         await client
             .ConnectAsync()
             .ConfigureAwait(false);
@@ -82,6 +84,18 @@ public class ApplicationHost : BackgroundService
             .ConfigureAwait(false);
     }
 
-
+    private async Task Client_ComponentInteractionCreated(DiscordClient sender, ComponentInteractionCreateEventArgs args)
+    {
+        //await args.Interaction.DeferAsync().ConfigureAwait(false);
+        switch (args.Interaction.Data.CustomId)
+        {
+            case "skipBtn":
+                await args.Interaction.CreateResponseAsync(
+                    InteractionResponseType.ChannelMessageWithSource, 
+                    new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
+                    .ConfigureAwait(false);
+                break;
+        }
+    }
 }
 
