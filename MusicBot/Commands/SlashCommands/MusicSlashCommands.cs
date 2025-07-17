@@ -5,6 +5,7 @@ using DSharpPlus.SlashCommands;
 using Lavalink4NET;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
+using Lavalink4NET.Protocol.Payloads.Events;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
@@ -18,17 +19,57 @@ namespace MusicBot.Commands.SlashCommands
     internal class MusicSlashCommands : ApplicationCommandModule
     {
         private readonly IAudioService _audioService;
-        public static DiscordMessage discordMessage { get;  set; }
+        private DiscordMessage discordResponse { get;  set; }
+        private InteractionContext _context { get; set; }
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
+/*            _audioService.TrackStarted += audioService_TrackStarted;
+            _audioService.TrackEnded += audioService_TrackEnded;*/
         }
+
+/*        private async Task audioService_TrackEnded(object sender, Lavalink4NET.Events.Players.TrackEndedEventArgs eventArgs)
+        {
+            switch (eventArgs.Reason) 
+            {
+                case TrackEndReason.Finished:
+                    await _context.Channel.DeleteMessageAsync(discordResponse).ConfigureAwait(false);
+                    break;
+            }
+        }
+
+        private async Task audioService_TrackStarted(object sender, Lavalink4NET.Events.Players.TrackStartedEventArgs eventArgs)
+        {
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+            var embedMusic = new DiscordEmbedBuilder
+            {
+                Color = DiscordColor.Green,
+                Title = "Now Playing",
+                ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
+                Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
+            };
+
+             discordResponse = await _context
+           .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
+           .ConfigureAwait(false);
+
+            var interactWithSkipButton = await discordResponse.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+
+            if (interactWithSkipButton.Result is not null)
+            {
+                await _context.Channel.DeleteMessageAsync(discordResponse).ConfigureAwait(false);
+                await this.Skip(_context).ConfigureAwait(false);
+            }
+        }*/
 
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
         {
             var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
+
+            _context = context;
+
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
 
             if (player is null)
@@ -67,7 +108,7 @@ namespace MusicBot.Commands.SlashCommands
                     .ConfigureAwait(false);
             }
 
-        }
+        } 
 
         [SlashCommand("skip", "skip track")]
         public async Task Skip(InteractionContext context)
@@ -113,13 +154,12 @@ namespace MusicBot.Commands.SlashCommands
             var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
 
             if (interactWithSkipButton.Result is not null)
-            {               
-                await this.Skip(context).ConfigureAwait(false);
+            {
                 await context.Channel.DeleteMessageAsync(response).ConfigureAwait(false);
-
+                await this.Skip(context).ConfigureAwait(false);
             }
         }
-        private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext contex, bool connectToVoiceChannel = true)
+        private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
         {
             var retrieveOptions = new PlayerRetrieveOptions(
                 ChannelBehavior: connectToVoiceChannel ? PlayerChannelBehavior.Join : PlayerChannelBehavior.None);
@@ -128,8 +168,8 @@ namespace MusicBot.Commands.SlashCommands
 
             var result = await _audioService.Players
                 .RetrieveAsync(
-                    contex.Guild.Id, 
-                    contex.Member?.VoiceState.Channel.Id, 
+                    context.Guild.Id, 
+                    context.Member?.VoiceState.Channel.Id, 
                     playerFactory: PlayerFactory.Queued, 
                     Options.Create(playerOptions), 
                     retrieveOptions)
@@ -148,9 +188,10 @@ namespace MusicBot.Commands.SlashCommands
                     .WithContent(errMessage)
                     .AsEphemeral();
 
-                await contex.FollowUpAsync(errResponse).ConfigureAwait(false);
+                await context.FollowUpAsync(errResponse).ConfigureAwait(false);
 
             }
+
             return result.Player;
         } 
 
