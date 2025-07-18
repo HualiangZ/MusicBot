@@ -38,23 +38,25 @@ namespace MusicBot.Commands.SlashCommands
             {
                 case TrackEndReason.Finished:
                     trackQueue.RemoveAt(0);
-                    var embedMusic = new DiscordEmbedBuilder
+                    if(trackQueue.Count > 0)
                     {
-                        Color = DiscordColor.Green,
-                        Title = "Test Embed",
-                        ImageUrl = trackQueue.First().ArtworkUri.ToString(),
-                        Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
-                    };
-                    discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-                    var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
-                    if (!result.TimedOut)
-                    {
-                        await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                        var embedMusic = new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Test Embed",
+                            ImageUrl = trackQueue.First().ArtworkUri.ToString(),
+                            Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
+                        };
+                        discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+                        var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
+                        if (!result.TimedOut)
+                        {
+                            await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                        }
                     }
                     break;
             }
         }
-
 
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
