@@ -1,5 +1,4 @@
-﻿using DSharpPlus;
-using DSharpPlus.Entities;
+﻿using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Lavalink4NET;
@@ -10,11 +9,8 @@ using Lavalink4NET.Protocol.Payloads.Events;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
-using System;
-using System.Diagnostics;
-using System.Diagnostics.Metrics;
+using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
 {
@@ -25,66 +21,40 @@ namespace MusicBot.Commands.SlashCommands
         private DiscordChannel channel { get; set; }
         private InteractionContext interactionContext { get; set; }
         private PlayerResult<QueuedLavalinkPlayer> resultPlayer { get; set; }
-        private LavalinkTrack trackPlaying { get; set; }
+        private List<LavalinkTrack> trackQueue = new List<LavalinkTrack>();
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
-            _audioService.TrackStarted += audioService_TrackStarted;
-            //_audioService.TrackEnded += _audioService_TrackEnded;
+            //_audioService.TrackStarted += audioService_TrackStarted;
+            _audioService.TrackEnded += _audioService_TrackEnded;
         }
 
-/*        private async Task _audioService_TrackEnded(object sender, TrackEndedEventArgs eventArgs)
+        private async Task _audioService_TrackEnded(object sender, TrackEndedEventArgs eventArgs)
         {
 
-            trackPlaying = eventArgs.Player.CurrentTrack;
             var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-            var embedMusic = new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Green,
-                Title = "Test Embed",
-                ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
-                Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
-            };
 
             switch (eventArgs.Reason) 
-            { 
+            {
                 case TrackEndReason.Finished:
+                    trackQueue.RemoveAt(0);
+                    var embedMusic = new DiscordEmbedBuilder
+                    {
+                        Color = DiscordColor.Green,
+                        Title = "Test Embed",
+                        ImageUrl = trackQueue.First().ArtworkUri.ToString(),
+                        Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
+                    };
                     discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-                    var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
+                    var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
                     if (!result.TimedOut)
                     {
                         await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
                     }
                     break;
             }
-        }*/
-
-        private async Task audioService_TrackStarted(object sender, Lavalink4NET.Events.Players.TrackStartedEventArgs eventArgs)
-        {
-            if (trackPlaying == null && trackPlaying != eventArgs.Player.CurrentTrack)
-            {
-                trackPlaying = eventArgs.Player.CurrentTrack;
-                var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-                var embedMusic = new DiscordEmbedBuilder
-                {
-                    Color = DiscordColor.Green,
-                    Title = "Test Embed",
-                    ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
-                    Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
-                };
-
-                discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-
-
-                var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
-
-                if (!result.TimedOut)
-                {
-                    await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
-                }
-            }
-
         }
+
 
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
@@ -120,6 +90,8 @@ namespace MusicBot.Commands.SlashCommands
             }
 
             var position = await player.PlayAsync(track).ConfigureAwait(false);
+
+            trackQueue.Append(track);
 
             if (position is 0)
             {
