@@ -37,26 +37,10 @@ namespace MusicBot.Commands.SlashCommands
             switch (eventArgs.Reason) 
             {
                 case TrackEndReason.Finished:
-                    trackQueue.RemoveAt(0);
-                    if(trackQueue.Count > 0)
-                    {
-                        var embedMusic = new DiscordEmbedBuilder
-                        {
-                            Color = DiscordColor.Green,
-                            Title = "Test Embed",
-                            ImageUrl = trackQueue.First().ArtworkUri.ToString(),
-                            Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
-                        };
-                        discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-                        var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
-                        if (!result.TimedOut)
-                        {
-                            await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
-                        }
-                    }
+                    await channel.SendMessageAsync("song finished");
                     break;
                 case TrackEndReason.Replaced:
-                    trackQueue.RemoveAt(0);
+                    /*trackQueue.RemoveAt(0);
                     if (trackQueue.Count > 0)
                     {
                         var embedMusic = new DiscordEmbedBuilder
@@ -72,7 +56,8 @@ namespace MusicBot.Commands.SlashCommands
                         {
                             await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
                         }
-                    }
+                    }*/
+                    await channel.SendMessageAsync("song skipped");
                     break;
 
             }
