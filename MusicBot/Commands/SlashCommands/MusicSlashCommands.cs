@@ -25,14 +25,18 @@ namespace MusicBot.Commands.SlashCommands
         private DiscordChannel channel { get; set; }
         private InteractionContext interactionContext { get; set; }
         private PlayerResult<QueuedLavalinkPlayer> resultPlayer { get; set; }
+        private LavalinkTrack trackPlaying { get; set; }
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
             _audioService.TrackStarted += audioService_TrackStarted;
+            //_audioService.TrackEnded += _audioService_TrackEnded;
         }
 
-        private async Task audioService_TrackStarted(object sender, Lavalink4NET.Events.Players.TrackStartedEventArgs eventArgs)
+/*        private async Task _audioService_TrackEnded(object sender, TrackEndedEventArgs eventArgs)
         {
+
+            trackPlaying = eventArgs.Player.CurrentTrack;
             var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
             var embedMusic = new DiscordEmbedBuilder
             {
@@ -41,15 +45,43 @@ namespace MusicBot.Commands.SlashCommands
                 ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
                 Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
             };
- 
-            discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-            
-            
-            var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
 
-            if (!result.TimedOut)
+            switch (eventArgs.Reason) 
+            { 
+                case TrackEndReason.Finished:
+                    discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+                    var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
+                    if (!result.TimedOut)
+                    {
+                        await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                    }
+                    break;
+            }
+        }*/
+
+        private async Task audioService_TrackStarted(object sender, Lavalink4NET.Events.Players.TrackStartedEventArgs eventArgs)
+        {
+            if (trackPlaying == null && trackPlaying != eventArgs.Player.CurrentTrack)
             {
-                await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                trackPlaying = eventArgs.Player.CurrentTrack;
+                var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+                var embedMusic = new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Green,
+                    Title = "Test Embed",
+                    ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
+                    Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
+                };
+
+                discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+
+
+                var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
+
+                if (!result.TimedOut)
+                {
+                    await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                }
             }
 
         }
