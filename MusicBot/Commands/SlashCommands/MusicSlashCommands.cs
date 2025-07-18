@@ -9,7 +9,6 @@ using Lavalink4NET.Protocol.Payloads.Events;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -22,9 +21,61 @@ namespace MusicBot.Commands.SlashCommands
         private DiscordChannel channel { get; set; }
         private InteractionContext interactionContext { get; set; }
         private PlayerResult<QueuedLavalinkPlayer> resultPlayer { get; set; }
+        private List<LavalinkTrack> trackQueue = new List<LavalinkTrack>();
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
+            //_audioService.TrackStarted += audioService_TrackStarted;
+            _audioService.TrackEnded += _audioService_TrackEnded;
+        }
+
+        private async Task _audioService_TrackEnded(object sender, TrackEndedEventArgs eventArgs)
+        {
+
+            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+
+            switch (eventArgs.Reason) 
+            {
+                case TrackEndReason.Finished:
+                    trackQueue.RemoveAt(0);
+                    if(trackQueue.Count > 0)
+                    {
+                        var embedMusic = new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Test Embed",
+                            ImageUrl = trackQueue.First().ArtworkUri.ToString(),
+                            Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
+                        };
+                        discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+                        var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
+                        if (!result.TimedOut)
+                        {
+                            await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                        }
+                    }
+                    break;
+                case TrackEndReason.Replaced:
+                    trackQueue.RemoveAt(0);
+                    if (trackQueue.Count > 0)
+                    {
+                        var embedMusic = new DiscordEmbedBuilder
+                        {
+                            Color = DiscordColor.Green,
+                            Title = "Test Embed",
+                            ImageUrl = trackQueue.First().ArtworkUri.ToString(),
+                            Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
+                        };
+                        discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+                        var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
+                        if (!result.TimedOut)
+                        {
+                            await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
+                        }
+                    }
+                    break;
+
+            }
         }
 
         [SlashCommand("play", "plays music")]
@@ -32,6 +83,9 @@ namespace MusicBot.Commands.SlashCommands
         {
             var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
+
+            channel = context.Channel;
+            interactionContext = context;
 
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
 
@@ -59,7 +113,7 @@ namespace MusicBot.Commands.SlashCommands
 
             var position = await player.PlayAsync(track).ConfigureAwait(false);
 
-            trackQueue.Add(track);
+            trackQueue.Append(track);
 
             if (position is 0)
             {
