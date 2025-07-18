@@ -3,6 +3,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Lavalink4NET;
+using Lavalink4NET.Events.Players;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
 using Lavalink4NET.Protocol.Payloads.Events;
@@ -12,6 +13,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
@@ -20,22 +22,13 @@ namespace MusicBot.Commands.SlashCommands
     {
         private readonly IAudioService _audioService;
         private DiscordMessage discordResponse { get;  set; }
-        private InteractionContext _context { get; set; }
+        private DiscordChannel channel { get; set; }
+        private InteractionContext interactionContext { get; set; }
+        private PlayerResult<QueuedLavalinkPlayer> resultPlayer { get; set; }
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
-/*            _audioService.TrackStarted += audioService_TrackStarted;
-            _audioService.TrackEnded += audioService_TrackEnded;*/
-        }
-
-/*        private async Task audioService_TrackEnded(object sender, Lavalink4NET.Events.Players.TrackEndedEventArgs eventArgs)
-        {
-            switch (eventArgs.Reason) 
-            {
-                case TrackEndReason.Finished:
-                    await _context.Channel.DeleteMessageAsync(discordResponse).ConfigureAwait(false);
-                    break;
-            }
+            _audioService.TrackStarted += audioService_TrackStarted;
         }
 
         private async Task audioService_TrackStarted(object sender, Lavalink4NET.Events.Players.TrackStartedEventArgs eventArgs)
@@ -44,23 +37,22 @@ namespace MusicBot.Commands.SlashCommands
             var embedMusic = new DiscordEmbedBuilder
             {
                 Color = DiscordColor.Green,
-                Title = "Now Playing",
+                Title = "Test Embed",
                 ImageUrl = eventArgs.Player.CurrentTrack.ArtworkUri.ToString(),
                 Description = $"{eventArgs.Player.CurrentTrack.Title} by: {eventArgs.Player.CurrentTrack.Author}\n",
             };
+ 
+            discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
+            
+            
+            var result = await discordResponse.WaitForButtonAsync(timeoutOverride: eventArgs.Player.CurrentTrack.Duration);
 
-             discordResponse = await _context
-           .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
-           .ConfigureAwait(false);
-
-            var interactWithSkipButton = await discordResponse.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
-
-            if (interactWithSkipButton.Result is not null)
+            if (!result.TimedOut)
             {
-                await _context.Channel.DeleteMessageAsync(discordResponse).ConfigureAwait(false);
-                await this.Skip(_context).ConfigureAwait(false);
+                await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
             }
-        }*/
+
+        }
 
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
@@ -68,7 +60,8 @@ namespace MusicBot.Commands.SlashCommands
             var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
 
-            _context = context;
+            channel = context.Channel;
+            interactionContext = context;
 
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
 
@@ -109,6 +102,7 @@ namespace MusicBot.Commands.SlashCommands
             }
 
         } 
+
 
         [SlashCommand("skip", "skip track")]
         public async Task Skip(InteractionContext context)
@@ -166,7 +160,7 @@ namespace MusicBot.Commands.SlashCommands
 
             var playerOptions = new QueuedLavalinkPlayerOptions { HistoryCapacity = 10000 };
 
-            var result = await _audioService.Players
+            resultPlayer = await _audioService.Players
                 .RetrieveAsync(
                     context.Guild.Id, 
                     context.Member?.VoiceState.Channel.Id, 
@@ -175,9 +169,9 @@ namespace MusicBot.Commands.SlashCommands
                     retrieveOptions)
                 .ConfigureAwait(false);
 
-            if (!result.IsSuccess)
+            if (!resultPlayer.IsSuccess)
             {
-                var errMessage = result.Status switch
+                var errMessage = resultPlayer.Status switch
                 {
                     PlayerRetrieveStatus.UserNotInVoiceChannel => "You are not in a voice channel",
                     PlayerRetrieveStatus.BotNotConnected => "The bot is not connected",
@@ -192,7 +186,7 @@ namespace MusicBot.Commands.SlashCommands
 
             }
 
-            return result.Player;
+            return resultPlayer.Player;
         } 
 
     }
