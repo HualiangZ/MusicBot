@@ -11,9 +11,11 @@ using System.Threading.Tasks;
 
 public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 {
-    public MyQueuedPlayer(IPlayerProperties<QueuedLavalinkPlayer, QueuedLavalinkPlayerOptions> properties) 
+    private readonly DiscordChannel _textChannel;
+    public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties) 
         : base(properties)
     {
+        _textChannel = properties.Options.Value.TextChannel;
     }
 
 }
