@@ -2,6 +2,7 @@
 using DSharpPlus.Interactivity.Extensions;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
+using Lavalink4NET.Protocol.Payloads.Events;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,10 +14,21 @@ using System.Threading.Tasks;
 public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 {
     private readonly DiscordChannel _textChannel;
+    private DiscordMessage _message;
     public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties) 
         : base(properties)
     {
         _textChannel = properties.Options.Value.TextChannel;
+    }
+
+    protected override async ValueTask NotifyTrackEndedAsync(ITrackQueueItem queueItem, TrackEndReason endReason, CancellationToken cancellationToken = default)
+    {
+        await base
+            .NotifyTrackEndedAsync(queueItem, endReason, cancellationToken)
+            .ConfigureAwait(false);
+
+        await _message.DeleteAsync();
+
     }
 
     protected override async ValueTask NotifyTrackStartedAsync(ITrackQueueItem track, CancellationToken cancellationToken = default)
@@ -37,6 +49,8 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         var response = await _textChannel
        .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
        .ConfigureAwait(false);
+
+        _message = response;
 
         var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
 
