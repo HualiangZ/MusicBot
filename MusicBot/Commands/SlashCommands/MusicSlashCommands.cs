@@ -5,62 +5,26 @@ using Lavalink4NET;
 using Lavalink4NET.Events.Players;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
+using Lavalink4NET.Protocol;
 using Lavalink4NET.Protocol.Payloads.Events;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
 {
     internal class MusicSlashCommands : ApplicationCommandModule
     {
         private readonly IAudioService _audioService;
-        private DiscordMessage discordResponse { get;  set; }
-        private DiscordChannel channel { get; set; }
-        private InteractionContext interactionContext { get; set; }
-        private PlayerResult<QueuedLavalinkPlayer> resultPlayer { get; set; }
+
         private List<LavalinkTrack> trackQueue = new List<LavalinkTrack>();
         public MusicSlashCommands(IAudioService audioService) 
         {
             this._audioService = audioService;
-            //_audioService.TrackStarted += audioService_TrackStarted;
-            _audioService.TrackEnded += _audioService_TrackEnded;
-        }
-
-        private async Task _audioService_TrackEnded(object sender, TrackEndedEventArgs eventArgs)
-        {
-
-            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-
-            switch (eventArgs.Reason) 
-            {
-                case TrackEndReason.Finished:
-                    await channel.SendMessageAsync("song finished");
-                    break;
-                case TrackEndReason.Replaced:
-                    /*trackQueue.RemoveAt(0);
-                    if (trackQueue.Count > 0)
-                    {
-                        var embedMusic = new DiscordEmbedBuilder
-                        {
-                            Color = DiscordColor.Green,
-                            Title = "Test Embed",
-                            ImageUrl = trackQueue.First().ArtworkUri.ToString(),
-                            Description = $"{trackQueue.First().Title} by: {trackQueue.First().Author}\n",
-                        };
-                        discordResponse = await channel.SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn));
-                        var result = await discordResponse.WaitForButtonAsync(timeoutOverride: trackQueue.First().Duration);
-                        if (!result.TimedOut)
-                        {
-                            await resultPlayer.Player.SkipAsync().ConfigureAwait(false);
-                        }
-                    }*/
-                    await channel.SendMessageAsync("song skipped");
-                    break;
-
-            }
         }
 
         [SlashCommand("play", "plays music")]
@@ -68,9 +32,6 @@ namespace MusicBot.Commands.SlashCommands
         {
             var interact = ApplicationHost.client.GetInteractivity();
             await context.DeferAsync().ConfigureAwait(false);
-
-            channel = context.Channel;
-            interactionContext = context;
 
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
 
@@ -164,20 +125,27 @@ namespace MusicBot.Commands.SlashCommands
                 await this.Skip(context).ConfigureAwait(false);
             }
         }
-        private async ValueTask<QueuedLavalinkPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
+
+
+
+
+        private async ValueTask<MyQueuedPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
         {
             var retrieveOptions = new PlayerRetrieveOptions(
                 ChannelBehavior: connectToVoiceChannel ? PlayerChannelBehavior.Join : PlayerChannelBehavior.None);
 
-            var playerOptions = new QueuedLavalinkPlayerOptions { HistoryCapacity = 10000 };
+            static ValueTask<MyQueuedPlayer> CreatePlayerAsync(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties, CancellationToken cancellationToken = default)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                ArgumentNullException.ThrowIfNull(properties);
 
-            resultPlayer = await _audioService.Players
-                .RetrieveAsync(
-                    context.Guild.Id, 
-                    context.Member?.VoiceState.Channel.Id, 
-                    playerFactory: PlayerFactory.Queued, 
-                    Options.Create(playerOptions), 
-                    retrieveOptions)
+                return ValueTask.FromResult(new MyQueuedPlayer(properties));
+            }
+
+            var options = new MyQueuePlayerOptions();
+
+            var resultPlayer = await _audioService.Players
+                .RetrieveAsync<MyQueuedPlayer, MyQueuePlayerOptions>(context.Guild.Id,context.Member?.VoiceState.Channel.Id, CreatePlayerAsync, Options.Create(options), retrieveOptions)
                 .ConfigureAwait(false);
 
             if (!resultPlayer.IsSuccess)
