@@ -142,7 +142,7 @@ namespace MusicBot.Commands.SlashCommands
                 return ValueTask.FromResult(new MyQueuedPlayer(properties));
             }
 
-            var options = new MyQueuePlayerOptions() {HistoryCapacity = 10000, TextChannel = context.Member?.VoiceState.Channel} ;
+            var options = new MyQueuePlayerOptions() {HistoryCapacity = 10000, TextChannel = context.Channel} ;
 
             var resultPlayer = await _audioService.Players
                 .RetrieveAsync<MyQueuedPlayer, MyQueuePlayerOptions>(context.Guild.Id,
