@@ -27,8 +27,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
             .NotifyTrackEndedAsync(queueItem, endReason, cancellationToken)
             .ConfigureAwait(false);
 
-        await _message.DeleteAsync();
-
+        await _message.DeleteAsync().ConfigureAwait(false);
     }
 
     protected override async ValueTask NotifyTrackStartedAsync(ITrackQueueItem track, CancellationToken cancellationToken = default)
@@ -52,15 +51,14 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 
         _message = response;
 
-        var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
+        var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn", track.Track.Duration).ConfigureAwait(false);
 
         if (interactWithSkipButton.Result is not null)
         {
             await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
-            await this.SkipAsync();
+            await this.SkipAsync().ConfigureAwait(false);
         }
 
-        
     }
 
 }

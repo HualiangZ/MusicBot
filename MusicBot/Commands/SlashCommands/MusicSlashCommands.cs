@@ -58,13 +58,15 @@ namespace MusicBot.Commands.SlashCommands
             }
 
             var position = await player.PlayAsync(track).ConfigureAwait(false);
-
-            trackQueue.Append(track);
+ 
 
             if (position is 0)
             {
-                await ResponseMessage(context, track).ConfigureAwait(false);
+                var response = await context
+                .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bot Connected"))
+                .ConfigureAwait(false);
 
+                await response.DeleteAsync().ConfigureAwait(false);
             }
             else
             {
@@ -74,60 +76,6 @@ namespace MusicBot.Commands.SlashCommands
             }
 
         } 
-
-
-        [SlashCommand("skip", "skip track")]
-        public async Task Skip(InteractionContext context)
-        {
-            var player = await GetPlayerAsync(context, connectToVoiceChannel: false);
-            if (player is null) { return; }
-
-            if (player.CurrentTrack is null)
-            {
-                await context.CreateResponseAsync("Nothing is Playing").ConfigureAwait(false);
-                return;
-            }
-
-            await player.SkipAsync().ConfigureAwait(false);
-
-            var track = player.CurrentTrack;
-
-            if (track is not null)
-            {
-                await ResponseMessage(context, track).ConfigureAwait(false);
-            }
-            else
-            {
-                await context.FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Playlist is empty")).ConfigureAwait(false);
-            }
-        }
-
-        private async Task ResponseMessage(InteractionContext context, LavalinkTrack track)
-        {
-            var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
-            var embedMusic = new DiscordEmbedBuilder
-            {
-                Color = DiscordColor.Green,
-                Title = "Now Playing",
-                ImageUrl = track.ArtworkUri.ToString(),
-                Description = $"{track.Title} by: {track.Author}\n",
-            };
-
-            var response = await context
-           .FollowUpAsync(new DiscordFollowupMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
-           .ConfigureAwait(false);
-
-            var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn").ConfigureAwait(false);
-
-            if (interactWithSkipButton.Result is not null)
-            {
-                await context.Channel.DeleteMessageAsync(response).ConfigureAwait(false);
-                await this.Skip(context).ConfigureAwait(false);
-            }
-        }
-
-
-
 
         private async ValueTask<MyQueuedPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
         {
