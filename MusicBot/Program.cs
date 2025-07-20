@@ -31,6 +31,11 @@ builder.Services.AddSingleton<DiscordClient>();
 builder.Services.AddSingleton(new DiscordConfiguration { Token = jsonReader.token });
 builder.Services.AddLavalink();
 
+builder.Services.AddLogging(x => x
+    .AddConsole()
+    .AddFilter("Microsoft.Extensions.Http.DefaultHttpClientFactory", LogLevel.Warning)
+    .SetMinimumLevel(LogLevel.Trace));
+
 builder.Services.AddLogging(s => s.AddConsole().SetMinimumLevel(LogLevel.Trace));
 builder.Build().Run();
 
