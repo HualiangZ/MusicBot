@@ -27,6 +27,16 @@ namespace MusicBot.Commands.SlashCommands
             this._audioService = audioService;
         }
 
+        public async Task SongAddedResponse(InteractionContext context)
+        {
+            var addedResponse = new DiscordFollowupMessageBuilder().WithContent("Added");
+            var response = await context
+                .FollowUpAsync(addedResponse)
+                .ConfigureAwait(false);
+
+            await response.DeleteAsync().ConfigureAwait(false);
+        }
+
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
         {
@@ -39,40 +49,72 @@ namespace MusicBot.Commands.SlashCommands
             {
                 return;
             }
+      
+            bool isPlaylist = false;
+            var errResponse = new DiscordFollowupMessageBuilder()
+                        .WithContent("No results.")
+                        .AsEphemeral();
+            
 
-            var track = await _audioService.Tracks
-                .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
-                .ConfigureAwait(false);
-
-            if (track is null)
+            if (song.Contains("playlist"))
             {
-                var errResponse = new DiscordFollowupMessageBuilder()
-                .WithContent("No results.")
-                .AsEphemeral();
-
-                await context
-                    .FollowUpAsync(errResponse)
-                    .ConfigureAwait(false);
-
-                return;
+                isPlaylist = true;
             }
 
-            var position = await player.PlayAsync(track).ConfigureAwait(false);
- 
-
-            if (position is 0)
-            {
-                var response = await context
-                .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bot Connected"))
-                .ConfigureAwait(false);
-
-                await response.DeleteAsync().ConfigureAwait(false);
+            if (isPlaylist) 
+            { 
+                var playlist = await _audioService.Tracks.LoadTracksAsync(song, searchMode: TrackSearchMode.Spotify).ConfigureAwait(false);
+                foreach(var track in playlist.Tracks)
+                {
+                    if(track is not null)
+                    {
+                        await player.PlayAsync(track).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await context.FollowUpAsync(errResponse).ConfigureAwait(false);
+                    }
+                }
+                await SongAddedResponse(context).ConfigureAwait(false);
             }
             else
             {
-                await context
-                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}"))
+                LavalinkTrack track = null;
+                if (song.Contains("spotify"))
+                {
+                    track = await _audioService.Tracks
+                    .LoadTrackAsync(song, TrackSearchMode.Spotify)
                     .ConfigureAwait(false);
+                }
+                else
+                {
+                    track = await _audioService.Tracks
+                    .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
+                    .ConfigureAwait(false);
+                }
+
+                if (track is null)
+                {
+                    await context
+                        .FollowUpAsync(errResponse)
+                        .ConfigureAwait(false);
+
+                    return;
+                }
+
+                var position = await player.PlayAsync(track).ConfigureAwait(false);
+
+                if (position is 0)
+                {
+                    await SongAddedResponse(context).ConfigureAwait(false);
+                }
+                else
+                {
+                    await context
+                        .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}, {track.Author}"))
+                        .ConfigureAwait(false);
+                }
+
             }
 
         } 
