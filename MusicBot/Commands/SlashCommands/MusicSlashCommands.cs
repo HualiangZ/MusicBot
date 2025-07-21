@@ -27,6 +27,11 @@ namespace MusicBot.Commands.SlashCommands
             this._audioService = audioService;
         }
 
+        private DiscordFollowupMessageBuilder ErrResponse(InteractionContext context)
+        {
+            return new DiscordFollowupMessageBuilder().WithContent("No results.").AsEphemeral();
+        }
+
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
         {
@@ -57,9 +62,7 @@ namespace MusicBot.Commands.SlashCommands
                     }
                     else
                     {
-                        var errResponse = new DiscordFollowupMessageBuilder()
-                        .WithContent("No results.")
-                        .AsEphemeral();
+                        ErrResponse(context);
                     }
                 }
                 var response = await context
@@ -88,12 +91,8 @@ namespace MusicBot.Commands.SlashCommands
 
                 if (track is null)
                 {
-                    var errResponse = new DiscordFollowupMessageBuilder()
-                    .WithContent("No results.")
-                    .AsEphemeral();
-
                     await context
-                        .FollowUpAsync(errResponse)
+                        .FollowUpAsync(ErrResponse(context))
                         .ConfigureAwait(false);
 
                     return;
@@ -115,9 +114,7 @@ namespace MusicBot.Commands.SlashCommands
                         .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}"))
                         .ConfigureAwait(false);
                 }
-
             }
-
         } 
 
         private async ValueTask<MyQueuedPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
