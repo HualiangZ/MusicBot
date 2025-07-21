@@ -39,53 +39,83 @@ namespace MusicBot.Commands.SlashCommands
             {
                 return;
             }
-
-            LavalinkTrack track = null;
-
-            if (song.Contains("spotify"))
-            {
-                track = await _audioService.Tracks
-                .LoadTrackAsync(song, TrackSearchMode.Spotify)
-                .ConfigureAwait(false);
-            }
-            else
-            {
-                track = await _audioService.Tracks
-                .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
-                .ConfigureAwait(false);
-            }
-
+      
+            bool isPlaylist = false;
             
+            if (song.Contains("playlist"))
+                isPlaylist = true;
 
-            if (track is null)
-            {
-                var errResponse = new DiscordFollowupMessageBuilder()
-                .WithContent("No results.")
-                .AsEphemeral();
 
-                await context
-                    .FollowUpAsync(errResponse)
-                    .ConfigureAwait(false);
-
-                return;
-            }
-
-            var position = await player.PlayAsync(track).ConfigureAwait(false);
- 
-
-            if (position is 0)
-            {
+            if (isPlaylist) 
+            { 
+                var playlist = await _audioService.Tracks.LoadTracksAsync(song, searchMode: TrackSearchMode.Spotify).ConfigureAwait(false);
+                foreach(var track in playlist.Tracks)
+                {
+                    if(track is not null)
+                    {
+                        await player.PlayAsync(track).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        var errResponse = new DiscordFollowupMessageBuilder()
+                        .WithContent("No results.")
+                        .AsEphemeral();
+                    }
+                }
                 var response = await context
-                .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Bot Connected"))
+                .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Added"))
                 .ConfigureAwait(false);
 
                 await response.DeleteAsync().ConfigureAwait(false);
             }
             else
             {
-                await context
-                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}"))
+                LavalinkTrack track = null;
+                if (song.Contains("spotify"))
+                {
+                    track = await _audioService.Tracks
+                    .LoadTrackAsync(song, TrackSearchMode.Spotify)
                     .ConfigureAwait(false);
+                }
+                else
+                {
+                    track = await _audioService.Tracks
+                    .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
+                    .ConfigureAwait(false);
+                }
+
+
+
+                if (track is null)
+                {
+                    var errResponse = new DiscordFollowupMessageBuilder()
+                    .WithContent("No results.")
+                    .AsEphemeral();
+
+                    await context
+                        .FollowUpAsync(errResponse)
+                        .ConfigureAwait(false);
+
+                    return;
+                }
+
+                var position = await player.PlayAsync(track).ConfigureAwait(false);
+
+                if (position is 0)
+                {
+                    var response = await context
+                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent("Added"))
+                    .ConfigureAwait(false);
+
+                    await response.DeleteAsync().ConfigureAwait(false);
+                }
+                else
+                {
+                    await context
+                        .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}"))
+                        .ConfigureAwait(false);
+                }
+
             }
 
         } 
