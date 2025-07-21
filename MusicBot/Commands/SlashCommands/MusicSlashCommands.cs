@@ -40,9 +40,22 @@ namespace MusicBot.Commands.SlashCommands
                 return;
             }
 
-            var track = await _audioService.Tracks
+            LavalinkTrack track = null;
+
+            if (song.Contains("spotify"))
+            {
+                track = await _audioService.Tracks
+                .LoadTrackAsync(song, TrackSearchMode.Spotify)
+                .ConfigureAwait(false);
+            }
+            else
+            {
+                track = await _audioService.Tracks
                 .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
                 .ConfigureAwait(false);
+            }
+
+            
 
             if (track is null)
             {
