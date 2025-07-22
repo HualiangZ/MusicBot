@@ -123,6 +123,12 @@ namespace MusicBot.Commands.SlashCommands
         {
             var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
             player.ShuffleSong();
+            if (player.CurrentTrack is null)
+            {
+                await context.CreateResponseAsync("No song currently playing").ConfigureAwait(false);
+            }
+            await context.CreateResponseAsync("Songs Shuffled").ConfigureAwait(false);
+
         }
 
         [SlashCommand("Skip", "Skip current song")]
@@ -146,6 +152,11 @@ namespace MusicBot.Commands.SlashCommands
             if(track is null)
             {
                 await context.CreateResponseAsync("Skipped. Stopped playing because the queue is now empty.").ConfigureAwait(false);
+            }
+            else
+            {
+                await context.CreateResponseAsync("Skipped").ConfigureAwait(false);
+                await context.DeleteResponseAsync().ConfigureAwait(false);
             }
         }
 
