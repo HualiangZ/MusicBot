@@ -1,4 +1,5 @@
-﻿using DSharpPlus.Entities;
+﻿using DSharpPlus;
+using DSharpPlus.Entities;
 using DSharpPlus.Interactivity.Extensions;
 using Lavalink4NET.Players;
 using Lavalink4NET.Players.Queued;
@@ -15,6 +16,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 {
     private readonly DiscordChannel _textChannel;
     private DiscordMessage _message;
+    private DiscordMessage response;
     public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties) 
         : base(properties)
     {
@@ -36,6 +38,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
             .NotifyTrackStartedAsync(track, cancellationToken)
             .ConfigureAwait(false);
 
+        var shuffleBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "shuffleBtn", "Shuffle");
         var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
         var embedMusic = new DiscordEmbedBuilder
         {
@@ -45,20 +48,37 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
             Description = $"{track.Track.Title} by: {track.Track.Author}\n",
         };
 
-        var response = await _textChannel
-       .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn))
+        response = await _textChannel
+       .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn, shuffleBtn))
        .ConfigureAwait(false);
 
         _message = response;
 
-        var interactWithSkipButton = await response.WaitForButtonAsync("skipBtn", track.Track.Duration).ConfigureAwait(false);
-
-        if (interactWithSkipButton.Result is not null)
-        {
-            await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
-            await this.SkipAsync().ConfigureAwait(false);
-        }
+        ApplicationHost.client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
 
     }
 
+    private async Task Client_ComponentInteractionCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs args)
+    {
+        switch (args.Interaction.Data.CustomId)
+        {
+            case "skipBtn":
+                await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
+                await this.SkipAsync().ConfigureAwait(false);
+                await args.Interaction.CreateResponseAsync(
+                    InteractionResponseType.ChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
+                    .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                break;
+            case "shuffleBtn":
+                Shuffle = !Shuffle;
+                await args.Interaction.CreateResponseAsync(
+                   InteractionResponseType.ChannelMessageWithSource,
+                   new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
+                   .ConfigureAwait(false);
+                //await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                break;
+        }
+    }
 }

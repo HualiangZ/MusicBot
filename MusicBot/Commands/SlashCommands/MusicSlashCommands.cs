@@ -26,7 +26,6 @@ namespace MusicBot.Commands.SlashCommands
         {
             this._audioService = audioService;
         }
-
         public async Task SongAddedResponse(InteractionContext context)
         {
             var addedResponse = new DiscordFollowupMessageBuilder().WithContent("Added");
@@ -54,7 +53,6 @@ namespace MusicBot.Commands.SlashCommands
             var errResponse = new DiscordFollowupMessageBuilder()
                         .WithContent("No results.")
                         .AsEphemeral();
-            
 
             if (song.Contains("playlist"))
             {
