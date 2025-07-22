@@ -115,7 +115,32 @@ namespace MusicBot.Commands.SlashCommands
 
             }
 
-        } 
+        }
+
+
+        [SlashCommand("Skip", "Skip current song")]
+        public async Task Skip(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: false).ConfigureAwait(false);
+            if(player is null)
+            {
+                return;
+            }
+
+            if(player.CurrentTrack  is null)
+            {
+                await context.CreateResponseAsync("Nothing playing!").ConfigureAwait(false);
+                return;
+            }
+            await player.SkipAsync().ConfigureAwait(false);
+
+            var track = player.CurrentTrack;
+
+            if(track is null)
+            {
+                await context.CreateResponseAsync("Skipped. Stopped playing because the queue is now empty.").ConfigureAwait(false);
+            }
+        }
 
         private async ValueTask<MyQueuedPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
         {
