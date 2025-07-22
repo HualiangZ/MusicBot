@@ -57,6 +57,10 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         ApplicationHost.client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
 
     }
+    public void ShuffleSong()
+    {
+        Shuffle = !Shuffle;
+    }
 
     private async Task Client_ComponentInteractionCreated(DSharpPlus.DiscordClient sender, DSharpPlus.EventArgs.ComponentInteractionCreateEventArgs args)
     {

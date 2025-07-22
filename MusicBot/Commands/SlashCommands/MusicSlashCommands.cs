@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
@@ -117,11 +118,17 @@ namespace MusicBot.Commands.SlashCommands
 
         }
 
+        [SlashCommand("Shuffle", "Shuffle song")]
+        public async Task ShuffleSongCommand(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            player.ShuffleSong();
+        }
 
         [SlashCommand("Skip", "Skip current song")]
         public async Task Skip(InteractionContext context)
         {
-            var player = await GetPlayerAsync(context, connectToVoiceChannel: false).ConfigureAwait(false);
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
             if(player is null)
             {
                 return;
