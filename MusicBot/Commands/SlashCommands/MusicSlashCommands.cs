@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
@@ -26,7 +27,6 @@ namespace MusicBot.Commands.SlashCommands
         {
             this._audioService = audioService;
         }
-
         public async Task SongAddedResponse(InteractionContext context)
         {
             var addedResponse = new DiscordFollowupMessageBuilder().WithContent("Added");
@@ -54,7 +54,6 @@ namespace MusicBot.Commands.SlashCommands
             var errResponse = new DiscordFollowupMessageBuilder()
                         .WithContent("No results.")
                         .AsEphemeral();
-            
 
             if (song.Contains("playlist"))
             {
@@ -117,7 +116,49 @@ namespace MusicBot.Commands.SlashCommands
 
             }
 
-        } 
+        }
+
+        [SlashCommand("Shuffle", "Shuffle song")]
+        public async Task ShuffleSongCommand(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            player.ShuffleSong();
+            if (player.CurrentTrack is null)
+            {
+                await context.CreateResponseAsync("No song currently playing").ConfigureAwait(false);
+            }
+            await context.CreateResponseAsync("Songs Shuffled").ConfigureAwait(false);
+
+        }
+
+        [SlashCommand("Skip", "Skip current song")]
+        public async Task Skip(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            if(player is null)
+            {
+                return;
+            }
+
+            if(player.CurrentTrack  is null)
+            {
+                await context.CreateResponseAsync("Nothing playing!").ConfigureAwait(false);
+                return;
+            }
+            await player.SkipAsync().ConfigureAwait(false);
+
+            var track = player.CurrentTrack;
+
+            if(track is null)
+            {
+                await context.CreateResponseAsync("Skipped. Stopped playing because the queue is now empty.").ConfigureAwait(false);
+            }
+            else
+            {
+                await context.CreateResponseAsync("Skipped").ConfigureAwait(false);
+                await context.DeleteResponseAsync().ConfigureAwait(false);
+            }
+        }
 
         private async ValueTask<MyQueuedPlayer?> GetPlayerAsync(InteractionContext context, bool connectToVoiceChannel = true)
         {
