@@ -80,6 +80,29 @@ namespace MusicBot.Commands.SlashCommands
         private async Task TrackSearchPlaylist(InteractionContext context, string song, MyQueuedPlayer player)
         {
             var playlist = await _audioService.Tracks.LoadTracksAsync(song, searchMode: TrackSearchMode.Spotify).ConfigureAwait(false);
+            var errResponse = new DiscordFollowupMessageBuilder()
+                    .WithContent("No results.")
+                    .AsEphemeral();
+
+            if (!playlist.IsSuccess)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+            if (playlist.Tracks.Count() <= 0)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+            if (playlist.Playlist is null)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+
             foreach (var track in playlist.Tracks)
             {
                 if (track is not null)
@@ -88,6 +111,7 @@ namespace MusicBot.Commands.SlashCommands
                 }
             }
             await SongAddedResponse(context).ConfigureAwait(false);
+
         }
 
         [SlashCommand("play", "plays music")]
