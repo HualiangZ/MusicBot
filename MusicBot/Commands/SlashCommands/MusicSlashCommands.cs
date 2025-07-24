@@ -114,6 +114,44 @@ namespace MusicBot.Commands.SlashCommands
 
         }
 
+        [SlashCommand ("pause", "pause player")]
+        public async Task PauseAsync(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            if(player == null)
+            {
+                return;
+            }
+
+            if (player.State == PlayerState.Paused)
+            {
+                await context.CreateResponseAsync("Player already paused").ConfigureAwait(false);
+            }
+
+            await player.PauseAsync().ConfigureAwait(false);
+            await context.CreateResponseAsync("paused").ConfigureAwait(false);
+            await context.DeleteResponseAsync().ConfigureAwait(false);
+        }
+
+        [SlashCommand("resume", "pause player")]
+        public async Task ResumeAsync(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            if(player == null)
+            {
+                return;
+            }
+
+            if(player.State != PlayerState.Paused)
+            {
+                await context.CreateResponseAsync("Player is not paused").ConfigureAwait(false);
+            }
+
+            await player.ResumeAsync().ConfigureAwait(false);
+            await context.CreateResponseAsync("resume play").ConfigureAwait(false);
+            await context.DeleteResponseAsync().ConfigureAwait(false);
+        }
+
         [SlashCommand("play", "plays music")]
         public async Task Play(InteractionContext context, [Option("song", "Song to play")] string song)
         {
