@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 {
     private readonly DiscordChannel _textChannel;
-    private DiscordMessage _message;
+    private DiscordMessage previousSong;
     private DiscordMessage response;
     public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties) 
         : base(properties)
@@ -29,7 +29,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
             .NotifyTrackEndedAsync(queueItem, endReason, cancellationToken)
             .ConfigureAwait(false);
 
-        await _message.DeleteAsync().ConfigureAwait(false);
+        await previousSong.DeleteAsync().ConfigureAwait(false);
     }
 
     protected override async ValueTask NotifyTrackStartedAsync(ITrackQueueItem track, CancellationToken cancellationToken = default)
@@ -52,7 +52,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
        .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn, shuffleBtn))
        .ConfigureAwait(false);
 
-        _message = response;
+        previousSong = response;
 
         ApplicationHost.client.ComponentInteractionCreated += Client_ComponentInteractionCreated;
 

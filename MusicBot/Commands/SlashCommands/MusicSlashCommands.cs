@@ -2,18 +2,13 @@
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.SlashCommands;
 using Lavalink4NET;
-using Lavalink4NET.Events.Players;
 using Lavalink4NET.Players;
-using Lavalink4NET.Players.Queued;
-using Lavalink4NET.Protocol;
-using Lavalink4NET.Protocol.Payloads.Events;
 using Lavalink4NET.Rest.Entities.Tracks;
 using Lavalink4NET.Tracks;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 namespace MusicBot.Commands.SlashCommands
@@ -27,7 +22,7 @@ namespace MusicBot.Commands.SlashCommands
         {
             this._audioService = audioService;
         }
-        public async Task SongAddedResponse(InteractionContext context)
+        private async Task SongAddedResponse(InteractionContext context)
         {
             var addedResponse = new DiscordFollowupMessageBuilder().WithContent("Added");
             var response = await context
@@ -35,6 +30,121 @@ namespace MusicBot.Commands.SlashCommands
                 .ConfigureAwait(false);
 
             await response.DeleteAsync().ConfigureAwait(false);
+        }
+
+        private async Task TrackSeach(InteractionContext context, string song, MyQueuedPlayer player)
+        {
+            LavalinkTrack track = null;
+            if (song.Contains("spotify"))
+            {
+                 track = await _audioService.Tracks
+                .LoadTrackAsync(song, TrackSearchMode.Spotify)
+                .ConfigureAwait(false);
+            }
+            else
+            {
+                track = await _audioService.Tracks
+                .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
+                .ConfigureAwait(false);
+            }
+
+            if (track is null)
+            {
+                await context
+                    .FollowUpAsync(new DiscordFollowupMessageBuilder()
+                    .WithContent("No results.")
+                    .AsEphemeral()).ConfigureAwait(false);
+
+                return;
+            }
+
+            var position = await player.PlayAsync(track).ConfigureAwait(false);
+
+            if (position is 0)
+            {
+                await SongAddedResponse(context).ConfigureAwait(false);
+            }
+            else
+            {
+                await context
+                    .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}, {track.Author}"))
+                    .ConfigureAwait(false);
+            }
+        }
+
+        private async Task TrackSearchPlaylist(InteractionContext context, string song, MyQueuedPlayer player)
+        {
+            var playlist = await _audioService.Tracks.LoadTracksAsync(song, searchMode: TrackSearchMode.Spotify).ConfigureAwait(false);
+            var errResponse = new DiscordFollowupMessageBuilder()
+                    .WithContent("No results.")
+                    .AsEphemeral();
+
+            if (!playlist.IsSuccess)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+            if (playlist.Tracks.Count() <= 0)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+            if (playlist.Playlist is null)
+            {
+                await context
+                 .FollowUpAsync(errResponse).ConfigureAwait(false);
+                return;
+            }
+
+            foreach (var track in playlist.Tracks)
+            {
+                if (track is not null)
+                {
+                    await player.PlayAsync(track).ConfigureAwait(false);
+                }
+            }
+            await SongAddedResponse(context).ConfigureAwait(false);
+
+        }
+
+        [SlashCommand ("pause", "pause player")]
+        public async Task PauseAsync(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            if(player == null)
+            {
+                return;
+            }
+
+            if (player.State == PlayerState.Paused)
+            {
+                await context.CreateResponseAsync("Player already paused").ConfigureAwait(false);
+            }
+
+            await player.PauseAsync().ConfigureAwait(false);
+            await context.CreateResponseAsync("paused").ConfigureAwait(false);
+            await context.DeleteResponseAsync().ConfigureAwait(false);
+        }
+
+        [SlashCommand("resume", "pause player")]
+        public async Task ResumeAsync(InteractionContext context)
+        {
+            var player = await GetPlayerAsync(context, connectToVoiceChannel: true).ConfigureAwait(false);
+            if(player == null)
+            {
+                return;
+            }
+
+            if(player.State != PlayerState.Paused)
+            {
+                await context.CreateResponseAsync("Player is not paused").ConfigureAwait(false);
+            }
+
+            await player.ResumeAsync().ConfigureAwait(false);
+            await context.CreateResponseAsync("resume play").ConfigureAwait(false);
+            await context.DeleteResponseAsync().ConfigureAwait(false);
         }
 
         [SlashCommand("play", "plays music")]
@@ -51,9 +161,6 @@ namespace MusicBot.Commands.SlashCommands
             }
       
             bool isPlaylist = false;
-            var errResponse = new DiscordFollowupMessageBuilder()
-                        .WithContent("No results.")
-                        .AsEphemeral();
 
             if (song.Contains("playlist"))
             {
@@ -61,59 +168,12 @@ namespace MusicBot.Commands.SlashCommands
             }
 
             if (isPlaylist) 
-            { 
-                var playlist = await _audioService.Tracks.LoadTracksAsync(song, searchMode: TrackSearchMode.Spotify).ConfigureAwait(false);
-                foreach(var track in playlist.Tracks)
-                {
-                    if(track is not null)
-                    {
-                        await player.PlayAsync(track).ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        await context.FollowUpAsync(errResponse).ConfigureAwait(false);
-                    }
-                }
-                await SongAddedResponse(context).ConfigureAwait(false);
+            {
+                await TrackSearchPlaylist(context, song, player).ConfigureAwait(false);
             }
             else
             {
-                LavalinkTrack track = null;
-                if (song.Contains("spotify"))
-                {
-                    track = await _audioService.Tracks
-                    .LoadTrackAsync(song, TrackSearchMode.Spotify)
-                    .ConfigureAwait(false);
-                }
-                else
-                {
-                    track = await _audioService.Tracks
-                    .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
-                    .ConfigureAwait(false);
-                }
-
-                if (track is null)
-                {
-                    await context
-                        .FollowUpAsync(errResponse)
-                        .ConfigureAwait(false);
-
-                    return;
-                }
-
-                var position = await player.PlayAsync(track).ConfigureAwait(false);
-
-                if (position is 0)
-                {
-                    await SongAddedResponse(context).ConfigureAwait(false);
-                }
-                else
-                {
-                    await context
-                        .FollowUpAsync(new DiscordFollowupMessageBuilder().WithContent($"Added to queue {track.Title}, {track.Author}"))
-                        .ConfigureAwait(false);
-                }
-
+                await TrackSeach(context, song, player).ConfigureAwait(false);
             }
 
         }
@@ -140,7 +200,7 @@ namespace MusicBot.Commands.SlashCommands
                 return;
             }
 
-            if(player.CurrentTrack  is null)
+            if(player.CurrentTrack is null)
             {
                 await context.CreateResponseAsync("Nothing playing!").ConfigureAwait(false);
                 return;
