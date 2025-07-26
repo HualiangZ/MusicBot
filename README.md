@@ -1,1 +1,2 @@
-First Step figure out how to use dSharpPlus
+Discord music bot using Lavalink4net
+can use spotify link and youtube
