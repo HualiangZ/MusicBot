@@ -40,6 +40,9 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 
         var shuffleBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "shuffleBtn", "Shuffle");
         var skipBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "skipBtn", "Skip");
+        var pauseBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Secondary, "pauseBtn", "Pause");
+        var resumeBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Success, "resumeBtn", "Resume");
+        var stopBtn = new DiscordButtonComponent(DSharpPlus.ButtonStyle.Danger, "stopBtn", "Stop");
         var embedMusic = new DiscordEmbedBuilder
         {
             Color = DiscordColor.Green,
@@ -49,8 +52,9 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         };
 
         response = await _textChannel
-       .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic).AddComponents(skipBtn, shuffleBtn))
-       .ConfigureAwait(false);
+           .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic)
+           .AddComponents(resumeBtn,pauseBtn,skipBtn, shuffleBtn,stopBtn))
+           .ConfigureAwait(false);
 
         previousSong = response;
 
@@ -82,6 +86,31 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
                    new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
                    .ConfigureAwait(false);
                 //await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                break;
+            case "pauseBtn":
+                await this.PauseAsync().ConfigureAwait(false);
+                await args.Interaction.CreateResponseAsync(
+                    InteractionResponseType.ChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder().WithContent("Paused"))
+                    .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                break;
+            case "resumeBtn":
+                await this.ResumeAsync().ConfigureAwait(false);
+                await args.Interaction.CreateResponseAsync(
+                    InteractionResponseType.ChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder().WithContent("Resume"))
+                    .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                break;
+            case "stopBtn":
+                await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
+                await this.StopAsync().ConfigureAwait(false);
+                await args.Interaction.CreateResponseAsync(
+                    InteractionResponseType.ChannelMessageWithSource,
+                    new DiscordInteractionResponseBuilder().WithContent("Stopped"))
+                    .ConfigureAwait(false);
+                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
                 break;
         }
     }
