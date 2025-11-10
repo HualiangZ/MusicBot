@@ -32,10 +32,11 @@ namespace MusicBot.Commands.SlashCommands
             await response.DeleteAsync().ConfigureAwait(false);
         }
 
-        private async Task TrackSeach(InteractionContext context, string song, MyQueuedPlayer player)
+        private async Task TrackSeach(InteractionContext context, string songName, string? artist, string? audioPlayer, MyQueuedPlayer player)
         {
             LavalinkTrack track = null;
-            if (song.Contains("spotify"))
+            string song = $"{songName} by {artist}";
+            if (audioPlayer == "spotify")
             {
                  track = await _audioService.Tracks
                 .LoadTrackAsync(song, TrackSearchMode.Spotify)
@@ -43,6 +44,7 @@ namespace MusicBot.Commands.SlashCommands
             }
             else
             {
+                string songForYouTube = $"{song} \"topic\"";
                 track = await _audioService.Tracks
                 .LoadTrackAsync(song, TrackSearchMode.YouTubeMusic)
                 .ConfigureAwait(false);
