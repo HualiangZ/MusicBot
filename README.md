@@ -11,7 +11,7 @@
 
 | Slash Commands       | Argument            | Discription                       |
 | ---------------------|:-------------------:| ---------------------------------:|
-| /play                |[URL] OR [Song name] | Plays the top result from YouTube |
+| /play                |[URL] OR [Song name] | Plays the top search result       |
 | /Pause               |                     | Pause music                       |
 | /resume              |                     | Continue playing                  |
 | /skip                |                     | Skip current song                 |
