@@ -21,4 +21,4 @@
 
 "/play" also work for playlist it will queue all songs with in the playlist you privided.</br>
 You may also use the buttons provided</br>
-[image]
+<img src="https://github.com/HualiangZ/MusicBot/blob/cb54c3ae3760548ce86efb09f3c29ffa48ed8150/Screenshot%202026-02-28%20153909.png">
