@@ -28,8 +28,15 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         await base
             .NotifyTrackEndedAsync(queueItem, endReason, cancellationToken)
             .ConfigureAwait(false);
+        try
+        {
+            await previousSong.DeleteAsync().ConfigureAwait(false);
+        }
+        catch
+        {
 
-        await previousSong.DeleteAsync().ConfigureAwait(false);
+        }
+        
     }
 
     protected override async ValueTask NotifyTrackStartedAsync(ITrackQueueItem track, CancellationToken cancellationToken = default)
@@ -71,46 +78,85 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         switch (args.Interaction.Data.CustomId)
         {
             case "skipBtn":
-                await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
-                await this.SkipAsync().ConfigureAwait(false);
-                await args.Interaction.CreateResponseAsync(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
-                    .ConfigureAwait(false);
-                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                try
+                {
+                    await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
+                    await this.SkipAsync().ConfigureAwait(false);
+                    await args.Interaction.CreateResponseAsync(
+                        InteractionResponseType.ChannelMessageWithSource,
+                        new DiscordInteractionResponseBuilder().WithContent("Song skipped"))
+                        .ConfigureAwait(false);
+                    await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+
+                }
                 break;
             case "shuffleBtn":
-                Shuffle = !Shuffle;
-                await args.Interaction.CreateResponseAsync(
-                   InteractionResponseType.ChannelMessageWithSource,
-                   new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
-                   .ConfigureAwait(false);
-                //await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                try
+                {
+                    Shuffle = !Shuffle;
+                    await args.Interaction.CreateResponseAsync(
+                       InteractionResponseType.ChannelMessageWithSource,
+                       new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
+                       .ConfigureAwait(false);
+                    //await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+
+                }
+
                 break;
             case "pauseBtn":
-                await this.PauseAsync().ConfigureAwait(false);
-                await args.Interaction.CreateResponseAsync(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().WithContent("Paused"))
-                    .ConfigureAwait(false);
-                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                try
+                {
+                    await this.PauseAsync().ConfigureAwait(false);
+                    await args.Interaction.CreateResponseAsync(
+                        InteractionResponseType.ChannelMessageWithSource,
+                        new DiscordInteractionResponseBuilder().WithContent("Paused"))
+                        .ConfigureAwait(false);
+                    await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+
+                }
+
                 break;
             case "resumeBtn":
-                await this.ResumeAsync().ConfigureAwait(false);
-                await args.Interaction.CreateResponseAsync(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().WithContent("Resume"))
-                    .ConfigureAwait(false);
-                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                try
+                {
+                    await this.ResumeAsync().ConfigureAwait(false);
+                    await args.Interaction.CreateResponseAsync(
+                        InteractionResponseType.ChannelMessageWithSource,
+                        new DiscordInteractionResponseBuilder().WithContent("Resume"))
+                        .ConfigureAwait(false);
+                    await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+
+                }
+
                 break;
             case "stopBtn":
-                await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
-                await this.StopAsync().ConfigureAwait(false);
-                await args.Interaction.CreateResponseAsync(
-                    InteractionResponseType.ChannelMessageWithSource,
-                    new DiscordInteractionResponseBuilder().WithContent("Stopped"))
-                    .ConfigureAwait(false);
-                await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                try
+                {
+                    await _textChannel.DeleteMessageAsync(response).ConfigureAwait(false);
+                    await this.StopAsync().ConfigureAwait(false);
+                    await args.Interaction.CreateResponseAsync(
+                        InteractionResponseType.ChannelMessageWithSource,
+                        new DiscordInteractionResponseBuilder().WithContent("Stopped"))
+                        .ConfigureAwait(false);
+                    await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                }
+                catch
+                {
+
+                }
+
                 break;
         }
     }
