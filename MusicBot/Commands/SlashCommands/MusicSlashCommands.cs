@@ -161,15 +161,8 @@ namespace MusicBot.Commands.SlashCommands
             {
                 return;
             }
-      
-            bool isPlaylist = false;
 
             if (song.Contains("playlist"))
-            {
-                isPlaylist = true;
-            }
-
-            if (isPlaylist) 
             {
                 await TrackSearchPlaylist(context, song, player).ConfigureAwait(false);
             }
@@ -177,6 +170,7 @@ namespace MusicBot.Commands.SlashCommands
             {
                 await TrackSeach(context, song, player).ConfigureAwait(false);
             }
+
 
         }
 
