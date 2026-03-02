@@ -17,7 +17,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
     private readonly DiscordChannel _textChannel;
     private DiscordMessage previousSong;
     private DiscordMessage response;
-    public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties) 
+    public MyQueuedPlayer(IPlayerProperties<MyQueuedPlayer, MyQueuePlayerOptions> properties)
         : base(properties)
     {
         _textChannel = properties.Options.Value.TextChannel;
@@ -36,7 +36,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
         {
 
         }
-        
+
     }
 
     protected override async ValueTask NotifyTrackStartedAsync(ITrackQueueItem track, CancellationToken cancellationToken = default)
@@ -60,7 +60,7 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
 
         response = await _textChannel
            .SendMessageAsync(new DiscordMessageBuilder().AddEmbed(embedMusic)
-           .AddComponents(resumeBtn,pauseBtn,skipBtn, shuffleBtn,stopBtn))
+           .AddComponents(resumeBtn, pauseBtn, skipBtn, shuffleBtn, stopBtn))
            .ConfigureAwait(false);
 
         previousSong = response;
@@ -94,19 +94,19 @@ public sealed class MyQueuedPlayer : QueuedLavalinkPlayer
                 }
                 break;
             case "shuffleBtn":
+                ShuffleSong();
                 try
                 {
-                    Shuffle = !Shuffle;
                     await args.Interaction.CreateResponseAsync(
-                       InteractionResponseType.ChannelMessageWithSource,
-                       new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
-                       .ConfigureAwait(false);
-                    //await args.Interaction.DeleteOriginalResponseAsync().ConfigureAwait(false);
+                        InteractionResponseType.ChannelMessageWithSource,
+                        new DiscordInteractionResponseBuilder().WithContent("Shuffled"))
+                        .ConfigureAwait(false);
                 }
                 catch
                 {
 
                 }
+
 
                 break;
             case "pauseBtn":
